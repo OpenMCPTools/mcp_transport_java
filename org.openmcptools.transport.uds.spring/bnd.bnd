@@ -1,0 +1,11 @@
+-buildpath: \
+	org.osgi.annotation.bundle,\
+	org.osgi.annotation.versioning,\
+	org.osgi.service.component.annotations,\
+	io.projectreactor.reactor-core,\
+	slf4j.api,\
+	reactive-streams,\
+	io.modelcontextprotocol.sdk.mcp-core,\
+	org.openmcptools.transport,\
+	org.eclipse.ecf.ai.mcp.transports
+	
