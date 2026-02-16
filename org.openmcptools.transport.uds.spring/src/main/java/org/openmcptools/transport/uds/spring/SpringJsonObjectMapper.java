@@ -18,7 +18,7 @@ public class SpringJsonObjectMapper {
 	
 	@Activate
 	public SpringJsonObjectMapper() {
-		this.mcpJsonMapper = McpJsonDefaults.getDefaultMcpJsonMapper();
+		this.mcpJsonMapper = McpJsonDefaults.getMapper();
 	}
 	
 	public <T> T readValue(String content, Class<T> type) throws IOException {
