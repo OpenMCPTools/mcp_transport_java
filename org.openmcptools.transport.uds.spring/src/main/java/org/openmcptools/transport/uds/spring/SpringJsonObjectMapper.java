@@ -4,9 +4,10 @@ import java.io.IOException;
 
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
-import io.modelcontextprotocol.json.McpJsonDefaults;
 import io.modelcontextprotocol.json.McpJsonMapper;
+import io.modelcontextprotocol.json.McpJsonMapperSupplier;
 import io.modelcontextprotocol.json.TypeRef;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.JSONRPCMessage;
@@ -17,8 +18,9 @@ public class SpringJsonObjectMapper {
 	private final McpJsonMapper mcpJsonMapper;
 	
 	@Activate
-	public SpringJsonObjectMapper() {
-		this.mcpJsonMapper = McpJsonDefaults.getMapper();
+	public SpringJsonObjectMapper(
+			@Reference McpJsonMapperSupplier supplier) {
+		this.mcpJsonMapper = supplier.get();
 	}
 	
 	public <T> T readValue(String content, Class<T> type) throws IOException {
