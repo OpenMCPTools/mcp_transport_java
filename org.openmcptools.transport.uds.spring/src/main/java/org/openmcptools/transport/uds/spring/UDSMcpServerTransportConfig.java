@@ -3,6 +3,7 @@ package org.openmcptools.transport.uds.spring;
 import java.io.File;
 import java.nio.channels.Selector;
 import java.nio.file.Path;
+import java.util.Dictionary;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -38,8 +39,8 @@ public class UDSMcpServerTransportConfig extends UDSMcpTransportConfig {
 		}
 	}
 
-	public Map<String, Object> asProperties() {
-		Map<String, Object> props = super.asProperties();
+	public Dictionary<String, Object> asProperties() {
+		Dictionary<String, Object> props = super.asProperties();
 		props.put(AUTO_RESTART_SESSION_PROP, autoRestartSession());
 		return props;
 	}

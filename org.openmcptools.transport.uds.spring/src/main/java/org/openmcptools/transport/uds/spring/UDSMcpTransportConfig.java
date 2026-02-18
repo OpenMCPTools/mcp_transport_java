@@ -5,7 +5,8 @@ import java.io.IOException;
 import java.nio.channels.Selector;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
+import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,6 +19,13 @@ public class UDSMcpTransportConfig {
 	public static final String INCOMING_BUFFER_SIZE_PROP = "udsIncomingBufferSize";
 	public static final String SELECTOR_PROP = "udsSelector";
 	public static final String EXECUTOR_SERVICE_PROP = "udsExecutorService";
+
+	public static final String SERVER_TRANSPORT_FACTORY_NAME = "UDSMcpClientTransportFactory";
+
+	public static final String CLIENT_TRANSPORT_FACTORY_NAME = "UDSServerTransportProviderFactory";
+
+	public static final String SERVER_CF_TARGET = "(component.factory=" + SERVER_TRANSPORT_FACTORY_NAME + ")";
+	public static final String CLIENT_CF_TARGET = "(component.factory=" + CLIENT_TRANSPORT_FACTORY_NAME + ")";
 
 	public static Path getCurrentDir() {
 		return Paths.get("");
@@ -89,8 +97,8 @@ public class UDSMcpTransportConfig {
 		return targetSocketPath;
 	}
 
-	public Map<String, Object> asProperties() {
-		Map<String, Object> properties = new HashMap<String, Object>();
+	public Dictionary<String, Object> asProperties() {
+		Hashtable<String, Object> properties = new Hashtable<String, Object>();
 		properties.put(TARGET_SOCKET_PATH_PROP, getTargetSocketPath());
 		properties.put(INCOMING_BUFFER_SIZE_PROP, getIncomingBufferSize());
 		properties.put(SELECTOR_PROP, getSelector());

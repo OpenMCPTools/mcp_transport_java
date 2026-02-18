@@ -35,7 +35,7 @@ import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
-@Component(factory = "UDSMcpServerTransportProviderFactory")
+@Component(factory = UDSMcpTransportConfig.SERVER_TRANSPORT_FACTORY_NAME)
 public class UDSMcpServerTransportProviderFactory implements McpServerTransportProvider {
 
 	private static final Logger logger = LoggerFactory.getLogger(UDSMcpServerTransportProviderFactory.class);
