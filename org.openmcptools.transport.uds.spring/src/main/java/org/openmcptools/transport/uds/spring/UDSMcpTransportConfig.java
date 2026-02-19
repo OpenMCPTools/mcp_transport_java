@@ -20,9 +20,9 @@ public class UDSMcpTransportConfig {
 	public static final String SELECTOR_PROP = "udsSelector";
 	public static final String EXECUTOR_SERVICE_PROP = "udsExecutorService";
 
-	public static final String SERVER_TRANSPORT_FACTORY_NAME = "UDSMcpClientTransportFactory";
+	public static final String SERVER_TRANSPORT_FACTORY_NAME = "UDSMcpServerTransportProviderFactory";
 
-	public static final String CLIENT_TRANSPORT_FACTORY_NAME = "UDSServerTransportProviderFactory";
+	public static final String CLIENT_TRANSPORT_FACTORY_NAME = "UDSMcpClientTransportProviderFactory";
 
 	public static final String SERVER_CF_TARGET = "(component.factory=" + SERVER_TRANSPORT_FACTORY_NAME + ")";
 	public static final String CLIENT_CF_TARGET = "(component.factory=" + CLIENT_TRANSPORT_FACTORY_NAME + ")";
