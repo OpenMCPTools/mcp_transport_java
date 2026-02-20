@@ -1,5 +1,6 @@
 package org.openmcptools.transport;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 public interface McpTransport<A, M> {
@@ -10,7 +11,7 @@ public interface McpTransport<A, M> {
 
 	A sendMessage(M message);
 
-	<T> T unmarshalFrom(Object data, GenericTypeRef<T> typeRef);
+	<T> T unmarshalFrom(Object data, Type type);
 
 	List<String> protocolVersions();
 }
