@@ -1,15 +1,11 @@
-package org.openmcptools.transport.uds.spring;
+package org.openmcptools.transport.uds.flow;
 
 import java.nio.channels.Selector;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import org.openmcptools.transport.uds.UDSClientTransportConfig;
 
-public class UDSMcpClientTransportConfig extends UDSClientTransportConfig {
-
-	public static final String CLIENT_TRANSPORT_FACTORY_NAME = "UDSMcpClientTransportProviderFactory";
-	public static final String CLIENT_CF_TARGET = "(component.factory=" + CLIENT_TRANSPORT_FACTORY_NAME + ")";
+public class UDSMcpClientTransportConfig extends UDSMcpTransportConfig {
 
 	public UDSMcpClientTransportConfig(Path targetSocketPath, int incomingBufferSize, Selector selector,
 			ExecutorService executorService) {

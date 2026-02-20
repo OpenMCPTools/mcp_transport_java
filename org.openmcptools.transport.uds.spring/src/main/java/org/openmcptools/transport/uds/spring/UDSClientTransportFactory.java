@@ -1,5 +1,6 @@
 package org.openmcptools.transport.uds.spring;
 
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -11,7 +12,6 @@ import io.modelcontextprotocol.json.TypeRef;
 import io.modelcontextprotocol.spec.McpSchema.JSONRPCMessage;
 import reactor.core.publisher.Mono;
 
-import org.openmcptools.transport.GenericTypeRef;
 import org.openmcptools.transport.client.McpClientTransport;
 
 @Component(factory = "UDSClientTransportFactory")
@@ -41,8 +41,8 @@ public class UDSClientTransportFactory
 	}
 
 	@Override
-	public <T> T unmarshalFrom(Object data, GenericTypeRef<T> typeRef) {
-		return this.impl.unmarshalFrom(data, new TypeRef<T>() {
+	public <T> T unmarshalFrom(Object data, Type type) {
+		return this.impl.unmarshalFrom(data, new TypeRef<T>(type) {
 		});
 	}
 

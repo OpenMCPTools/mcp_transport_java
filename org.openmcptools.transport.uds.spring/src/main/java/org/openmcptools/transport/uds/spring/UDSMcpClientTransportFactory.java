@@ -26,7 +26,7 @@ import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
-@Component(factory = UDSMcpTransportConfig.CLIENT_TRANSPORT_FACTORY_NAME)
+@Component(factory = UDSMcpClientTransportConfig.CLIENT_TRANSPORT_FACTORY_NAME)
 public class UDSMcpClientTransportFactory implements McpClientTransport {
 
 	private static final Logger logger = LoggerFactory.getLogger(UDSMcpClientTransportFactory.class);

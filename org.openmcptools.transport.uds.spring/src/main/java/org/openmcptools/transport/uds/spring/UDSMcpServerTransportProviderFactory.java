@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
+import org.openmcptools.transport.uds.server.UDSServerStringChannel;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -35,7 +36,7 @@ import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
-@Component(factory = UDSMcpTransportConfig.SERVER_TRANSPORT_FACTORY_NAME)
+@Component(factory = UDSMcpServerTransportConfig.SERVER_TRANSPORT_FACTORY_NAME)
 public class UDSMcpServerTransportProviderFactory implements McpServerTransportProvider {
 
 	private static final Logger logger = LoggerFactory.getLogger(UDSMcpServerTransportProviderFactory.class);

@@ -7,5 +7,6 @@
 	reactive-streams,\
 	io.modelcontextprotocol.sdk.mcp-core,\
 	org.openmcptools.transport,\
-	org.eclipse.ecf.ai.mcp.transports
+	org.eclipse.ecf.ai.mcp.transports,\
+	org.openmcptools.transport.uds
 	

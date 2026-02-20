@@ -1,4 +1,4 @@
-package org.openmcptools.transport.uds.spring;
+package org.openmcptools.transport.uds.server;
 
 import java.io.IOException;
 import java.net.StandardProtocolFamily;

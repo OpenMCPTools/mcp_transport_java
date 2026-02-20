@@ -1,4 +1,4 @@
-package org.openmcptools.transport.uds.spring;
+package org.openmcptools.transport.uds;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,21 +11,14 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class UDSMcpTransportConfig {
+public class UDSTransportConfig {
 
 	public static final int DEFAULT_INCOMING_BUFFER_SIZE = 4096;
 
-	public static final String TARGET_SOCKET_PATH_PROP = "udsTargetSocketPath";
-	public static final String INCOMING_BUFFER_SIZE_PROP = "udsIncomingBufferSize";
-	public static final String SELECTOR_PROP = "udsSelector";
-	public static final String EXECUTOR_SERVICE_PROP = "udsExecutorService";
-
-	public static final String SERVER_TRANSPORT_FACTORY_NAME = "UDSMcpServerTransportProviderFactory";
-
-	public static final String CLIENT_TRANSPORT_FACTORY_NAME = "UDSMcpClientTransportProviderFactory";
-
-	public static final String SERVER_CF_TARGET = "(component.factory=" + SERVER_TRANSPORT_FACTORY_NAME + ")";
-	public static final String CLIENT_CF_TARGET = "(component.factory=" + CLIENT_TRANSPORT_FACTORY_NAME + ")";
+	public static final String TARGET_SOCKET_PATH_PROP = "targetSocketPath";
+	public static final String INCOMING_BUFFER_SIZE_PROP = "incomingBufferSize";
+	public static final String SELECTOR_PROP = "selector";
+	public static final String EXECUTOR_SERVICE_PROP = "executorService";
 
 	public static Path getCurrentDir() {
 		return Paths.get("");
@@ -54,7 +47,7 @@ public class UDSMcpTransportConfig {
 	protected Selector selector;
 	protected ExecutorService executorService;
 
-	public UDSMcpTransportConfig(Map<String, ?> properties) {
+	public UDSTransportConfig(Map<String, ?> properties) {
 		Path path = (Path) properties.get(TARGET_SOCKET_PATH_PROP);
 		this.targetSocketPath = path;
 		Integer bufSize = (Integer) properties.get(INCOMING_BUFFER_SIZE_PROP);
@@ -65,7 +58,7 @@ public class UDSMcpTransportConfig {
 		this.executorService = (ExecutorService) properties.get(EXECUTOR_SERVICE_PROP);
 	}
 
-	public UDSMcpTransportConfig(Path targetSocketPath, int incomingBufferSize, Selector selector,
+	public UDSTransportConfig(Path targetSocketPath, int incomingBufferSize, Selector selector,
 			ExecutorService executorService) {
 		this.targetSocketPath = targetSocketPath;
 		this.incomingBufferSize = incomingBufferSize;
@@ -73,7 +66,7 @@ public class UDSMcpTransportConfig {
 		this.executorService = executorService;
 	}
 
-	public UDSMcpTransportConfig(Path targetSocketPath) {
+	public UDSTransportConfig(Path targetSocketPath) {
 		this(targetSocketPath, DEFAULT_INCOMING_BUFFER_SIZE, null, null);
 	}
 
