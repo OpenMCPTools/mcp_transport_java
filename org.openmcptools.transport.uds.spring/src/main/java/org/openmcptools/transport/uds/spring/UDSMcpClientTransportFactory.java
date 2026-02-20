@@ -36,7 +36,7 @@ public class UDSMcpClientTransportFactory implements McpClientTransport {
 	private final Sinks.Many<JSONRPCMessage> outboundSink;
 
 	// Must be set/non-null
-	private SpringJsonObjectMapper objectMapper;
+	private JsonObjectMapper objectMapper;
 
 	private Path targetAddress;
 
@@ -58,7 +58,7 @@ public class UDSMcpClientTransportFactory implements McpClientTransport {
 	}
 
 	@Reference
-	void setMcpJsonMapper(SpringJsonObjectMapper jsonMapper) {
+	void setMcpJsonMapper(JsonObjectMapper jsonMapper) {
 		this.objectMapper = jsonMapper;
 	}
 	
@@ -97,7 +97,7 @@ public class UDSMcpClientTransportFactory implements McpClientTransport {
 		}).subscribeOn(Schedulers.boundedElastic());
 	}
 
-	private JSONRPCMessage deserializeJsonRpcMessage(SpringJsonObjectMapper objectMapper, String data)
+	private JSONRPCMessage deserializeJsonRpcMessage(JsonObjectMapper objectMapper, String data)
 			throws IOException {
 		return objectMapper.deserializeJsonRpcMessage(data);
 	}

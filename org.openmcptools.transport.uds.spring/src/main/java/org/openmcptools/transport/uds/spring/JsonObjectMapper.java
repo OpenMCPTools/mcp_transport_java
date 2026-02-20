@@ -12,13 +12,13 @@ import io.modelcontextprotocol.json.TypeRef;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.JSONRPCMessage;
 
-@Component(immediate=true, service=SpringJsonObjectMapper.class)
-public class SpringJsonObjectMapper {
+@Component(immediate=true, service=JsonObjectMapper.class)
+public class JsonObjectMapper {
 
 	private final McpJsonMapper mcpJsonMapper;
 	
 	@Activate
-	public SpringJsonObjectMapper(
+	public JsonObjectMapper(
 			@Reference McpJsonMapperSupplier supplier) {
 		this.mcpJsonMapper = supplier.get();
 	}

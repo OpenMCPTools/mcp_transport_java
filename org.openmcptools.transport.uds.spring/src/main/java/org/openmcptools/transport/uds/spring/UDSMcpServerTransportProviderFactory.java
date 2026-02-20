@@ -41,7 +41,7 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 
 	private static final Logger logger = LoggerFactory.getLogger(UDSMcpServerTransportProviderFactory.class);
 
-	private SpringJsonObjectMapper objectMapper;
+	private JsonObjectMapper objectMapper;
 	// Required Path for UnixDomainSocket creation
 	private Path targetAddress;
 
@@ -64,7 +64,7 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 	}
 
 	@Reference 
-	void setObjectMapper(SpringJsonObjectMapper jsonMapper) {
+	void setObjectMapper(JsonObjectMapper jsonMapper) {
 		this.objectMapper = jsonMapper;
 	}
 	
@@ -281,7 +281,7 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 			}
 		}
 
-		private JSONRPCMessage deserializeJsonRpcMessage(SpringJsonObjectMapper objectMapper, String data)
+		private JSONRPCMessage deserializeJsonRpcMessage(JsonObjectMapper objectMapper, String data)
 				throws IOException {
 			return objectMapper.deserializeJsonRpcMessage(data);
 		}
