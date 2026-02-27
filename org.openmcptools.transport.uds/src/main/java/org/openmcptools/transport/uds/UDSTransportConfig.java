@@ -92,10 +92,14 @@ public class UDSTransportConfig {
 
 	public Dictionary<String, Object> asProperties() {
 		Hashtable<String, Object> properties = new Hashtable<String, Object>();
-		properties.put(TARGET_SOCKET_PATH_PROP, getTargetSocketPath());
+		properties.put(TARGET_SOCKET_PATH_PROP, this.targetSocketPath);
 		properties.put(INCOMING_BUFFER_SIZE_PROP, getIncomingBufferSize());
-		properties.put(SELECTOR_PROP, getSelector());
-		properties.put(EXECUTOR_SERVICE_PROP, getExecutorService());
+		if (selector != null) {
+			properties.put(SELECTOR_PROP, this.selector);
+		}
+		if (executorService != null) {
+			properties.put(EXECUTOR_SERVICE_PROP, executorService);
+		}
 		return properties;
 	}
 

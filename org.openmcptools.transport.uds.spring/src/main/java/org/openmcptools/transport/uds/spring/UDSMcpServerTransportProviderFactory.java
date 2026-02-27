@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -51,8 +51,6 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 
 	private Selector selector;
 
-	private ExecutorService executorService;
-
 	// Created/set in setSessionFactory
 	private McpServerSession serverSession;
 
@@ -75,7 +73,6 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 		this.incomingBufferSize = serverConfig.getIncomingBufferSize();
 		this.restartSession = serverConfig.autoRestartSession();
 		this.selector = serverConfig.getSelector();
-		this.executorService = serverConfig.getExecutorService();
 	}
 
 	@Deactivate
@@ -150,7 +147,7 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 			this.inboundSink = Sinks.many().unicast().onBackpressureBuffer();
 			this.outboundSink = Sinks.many().unicast().onBackpressureBuffer();
 			this.outboundScheduler = Schedulers
-					.fromExecutorService(UDSMcpServerTransportProviderFactory.this.executorService, "uds-outbound");
+					.fromExecutorService(Executors.newCachedThreadPool(), "uds-outbound");
 		}
 
 		public UDSMcpSessionTransport() {
@@ -220,7 +217,7 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 
 			try {
 				this.serverSocketChannel = new UDSServerStringChannel(selector == null ? Selector.open() : selector,
-						incomingBufferSize, executorService) {
+						incomingBufferSize, Executors.newCachedThreadPool()) {
 					public void start(UnixDomainSocketAddress address, IOConsumer<SocketChannel> acceptHandler,
 							IOConsumer<String> readHandler) throws IOException {
 						super.start(StandardProtocolFamily.UNIX, address, acceptHandler, readHandler);
@@ -229,7 +226,6 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 					public boolean isClientConnected() {
 						return this.acceptedClient != null;
 					}
-
 					@Override
 					protected void handleException(SelectionKey key, Throwable e) {
 						// Do this with existing executor
