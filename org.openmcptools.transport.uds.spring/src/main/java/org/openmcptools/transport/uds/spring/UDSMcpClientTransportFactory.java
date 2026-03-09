@@ -1,16 +1,21 @@
 package org.openmcptools.transport.uds.spring;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.Selector;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.eclipse.ecf.ai.mcp.transports.UDSClientStringChannel;
+import org.openmcptools.transport.client.MCPClientTransport;
+import org.openmcptools.transport.util.GenericTypeRef;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -19,15 +24,17 @@ import org.slf4j.LoggerFactory;
 
 import io.modelcontextprotocol.json.TypeRef;
 import io.modelcontextprotocol.spec.McpClientTransport;
+import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.JSONRPCMessage;
+import io.modelcontextprotocol.spec.ProtocolVersions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
-@Component(factory = UDSMcpClientTransportConfig.CLIENT_TRANSPORT_FACTORY_NAME)
-public class UDSMcpClientTransportFactory implements McpClientTransport {
+@Component(factory = UDSMcpClientTransportConfig.CLIENT_TRANSPORT_FACTORY_NAME, service = { McpClientTransport.class, MCPClientTransport.class })
+public class UDSMcpClientTransportFactory implements McpClientTransport, MCPClientTransport<Mono<Void>, Mono<McpSchema.JSONRPCMessage>, Mono<McpSchema.JSONRPCMessage>,McpSchema.JSONRPCMessage> {
 
 	private static final Logger logger = LoggerFactory.getLogger(UDSMcpClientTransportFactory.class);
 
@@ -173,6 +180,35 @@ public class UDSMcpClientTransportFactory implements McpClientTransport {
 	@Override
 	public <T> T unmarshalFrom(Object data, TypeRef<T> typeRef) {
 		return this.objectMapper.unmarshalFrom(data, typeRef);
+	}
+
+	@Override
+	public void close() {
+		closeGracefully().block();
+	}
+
+	@Override
+	public List<String> protocolVersions() {
+		return List.of(ProtocolVersions.MCP_2024_11_05);
+	}
+
+	@Override
+	public <T> T unmarshalFrom(Object data, GenericTypeRef<T> unmarshalledTypeRef) {
+		return this.objectMapper.unmarshalFrom(data, new TypeRef<T>() {
+			@Override
+			public Type getType() {
+				return unmarshalledTypeRef.getType();
+			}
+		});
+	}
+
+	@Override
+	public Mono<Void> connect(Function<Mono<JSONRPCMessage>, Mono<JSONRPCMessage>> requestResponseHandler,
+			Consumer<Throwable> exceptionHandler) {
+		if (exceptionHandler != null) {
+			setExceptionHandler(exceptionHandler);
+		}
+		return connect(requestResponseHandler, null);
 	}
 
 }

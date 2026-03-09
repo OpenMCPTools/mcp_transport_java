@@ -27,7 +27,7 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.smallrye.mutiny.operators.multi.processors.UnicastProcessor;
 
-@Component(factory = UDSMcpTransportConfig.CLIENT_TRANSPORT_FACTORY_NAME)
+@Component(factory = FlowUDSMcpClientTransportConfig.CLIENT_TRANSPORT_FACTORY_NAME)
 public class McpClientTransportImpl implements McpClientTransport<Uni<Void>, JSONRPCMessage, Uni<JSONRPCMessage>, Uni<JSONRPCMessage>> {
 
 	private static final Logger logger = LoggerFactory.getLogger(McpClientTransportImpl.class);
@@ -63,7 +63,7 @@ public class McpClientTransportImpl implements McpClientTransport<Uni<Void>, JSO
 	
 	@Activate
 	void activate(Map<String, Object> properties) throws Exception {
-		UDSMcpClientTransportConfig clientConfig = new UDSMcpClientTransportConfig(properties);
+		FlowUDSMcpClientTransportConfig clientConfig = new FlowUDSMcpClientTransportConfig(properties);
 		this.targetAddress = clientConfig.getTargetSocketPath();
 		this.selector = clientConfig.getSelector();
 		this.executorService = clientConfig.getExecutorService();

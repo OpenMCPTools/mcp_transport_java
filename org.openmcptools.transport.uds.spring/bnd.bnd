@@ -10,3 +10,5 @@
 	org.eclipse.ecf.ai.mcp.transports,\
 	org.openmcptools.transport.uds
 	
+Bundle-Version:             2.0.0.${tstamp}
+	

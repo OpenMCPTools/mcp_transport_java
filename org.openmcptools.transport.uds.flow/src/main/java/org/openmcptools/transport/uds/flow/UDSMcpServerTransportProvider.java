@@ -1,7 +1,6 @@
-package org.openmcptools.transport.uds.spring;
+package org.openmcptools.transport.uds.flow;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.SelectionKey;
@@ -11,15 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
-import org.openmcptools.transport.server.MCPServerSessionFactory;
-import org.openmcptools.transport.server.MCPServerTransport;
-import org.openmcptools.transport.server.MCPServerTransportProvider;
 import org.openmcptools.transport.uds.server.UDSServerStringChannel;
-import org.openmcptools.transport.util.GenericTypeRef;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -35,16 +29,24 @@ import io.modelcontextprotocol.spec.McpServerSession;
 import io.modelcontextprotocol.spec.McpServerTransport;
 import io.modelcontextprotocol.spec.McpServerTransportProvider;
 import io.modelcontextprotocol.spec.ProtocolVersions;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.subscription.Cancellable;
+import io.smallrye.mutiny.operators.multi.processors.UnicastProcessor;
+import io.smallrye.mutiny.subscription.BackPressureStrategy;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
+import io.smallrye.mutiny.subscription.MultiEmitter;
+import io.smallrye.mutiny.subscription.UniEmitter;
+import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
+import io.smallrye.mutiny.tuples.Tuple2;
 
-@Component(factory = UDSMcpServerTransportConfig.SERVER_TRANSPORT_FACTORY_NAME, service = {McpServerTransportProvider.class, MCPServerTransportProvider.class})
-public class UDSMcpServerTransportProviderFactory implements McpServerTransportProvider, MCPServerTransportProvider<Mono<Void>, Mono<?>, JSONRPCMessage> {
+import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
+import org.reactivestreams.Publisher;
 
-	private static final Logger logger = LoggerFactory.getLogger(UDSMcpServerTransportProviderFactory.class);
+@Component(factory = FlowUDSMcpServerTransportConfig.SERVER_TRANSPORT_FACTORY_NAME)
+public class UDSMcpServerTransportProvider implements McpServerTransportProvider {
+
+	private static final Logger logger = LoggerFactory.getLogger(UDSMcpServerTransportProvider.class);
 
 	private JsonObjectMapper objectMapper;
 	// Required Path for UnixDomainSocket creation
@@ -56,11 +58,17 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 
 	private Selector selector;
 
+	private ExecutorService executorService;
+
 	// Created/set in setSessionFactory
 	private McpServerSession serverSession;
 
 	// Created/set in setSessionFactory
 	private UDSMcpSessionTransport sessionTransport;
+
+	public UDSMcpServerTransportProvider() {
+
+	}
 
 	@Reference 
 	void setObjectMapper(JsonObjectMapper jsonMapper) {
@@ -69,11 +77,12 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 	
 	@Activate
 	protected void activate(Map<String, Object> properties) {
-		UDSMcpServerTransportConfig serverConfig = new UDSMcpServerTransportConfig(properties);
+		FlowUDSMcpServerTransportConfig serverConfig = new FlowUDSMcpServerTransportConfig(properties);
 		this.targetAddress = serverConfig.getTargetSocketPath();
 		this.incomingBufferSize = serverConfig.getIncomingBufferSize();
 		this.restartSession = serverConfig.autoRestartSession();
 		this.selector = serverConfig.getSelector();
+		this.executorService = serverConfig.getExecutorService();
 	}
 
 	@Deactivate
@@ -101,18 +110,18 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 	}
 
 	@Override
-	public Mono<Void> notifyClients(String method, Object params) {
+	public Uni<Void> notifyClients(String method, Object params) {
 		if (this.serverSession == null) {
-			return Mono.error(McpError.builder(-1).message("No uds acceptedClient to use for notifyClients").build());
+			return Uni.createFrom().failure(McpError.builder(-1).message("No uds acceptedClient to use for notifyClients").build());
 		}
-		return this.serverSession.sendNotification(method, params)
-				.doOnError(e -> logger.error("Failed to send notification: {}", e.getMessage()));
+		return Uni.createFrom().publisher();
+		return serverSession.sendNotification(method, params).onFailure().invoke(e -> logger.error("Failed to send notification: {}", e.getMessage()))
 	}
 
 	@Override
-	public Mono<Void> closeGracefully() {
+	public Uni<Void> closeGracefully() {
 		if (this.serverSession == null) {
-			return Mono.empty();
+			return Uni.createFrom().voidItem();
 		}
 		this.restartSession = false;
 		return this.serverSession.closeGracefully();
@@ -134,8 +143,6 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 
 		private Sinks.One<Void> inboundReady;
 
-		private Scheduler outboundScheduler;
-
 		private Sinks.One<Void> outboundReady;
 
 		private UDSServerStringChannel serverSocketChannel;
@@ -143,12 +150,11 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 		private synchronized void initialize() {
 			isClosing = new AtomicBoolean(false);
 			isStarted = new AtomicBoolean(false);
-			outboundReady = Sinks.one();
+			// Refined Mutiny Sink initialization
+			outboundReady = Sinks.one().;
 			inboundReady = Sinks.one();
 			this.inboundSink = Sinks.many().unicast().onBackpressureBuffer();
 			this.outboundSink = Sinks.many().unicast().onBackpressureBuffer();
-			this.outboundScheduler = Schedulers
-					.fromExecutorService(Executors.newCachedThreadPool(), "uds-outbound");
 		}
 
 		public UDSMcpSessionTransport() {
@@ -157,7 +163,7 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 
 		public synchronized void handleMessage(McpSchema.JSONRPCMessage json) throws IOException {
 			try {
-				if (!this.inboundSink.tryEmitNext(json).isSuccess()) {
+				if (this.inboundSink.tryEmitNext(json).isFailure()) {
 					throw new Exception("Failed to enqueue message");
 				}
 			} catch (Exception e) {
@@ -167,14 +173,14 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 		}
 
 		@Override
-		public synchronized Mono<Void> sendMessage(McpSchema.JSONRPCMessage message) {
-			return Mono.zip(inboundReady.asMono(), outboundReady.asMono()).then(Mono.defer(() -> {
+		public synchronized Uni<Void> sendMessage(McpSchema.JSONRPCMessage message) {
+			return Uni.combine().all().unis(inboundReady.asUni(), outboundReady.asUni()).discardItems().chain(() -> {
 				if (outboundSink.tryEmitNext(message).isSuccess()) {
-					return Mono.empty();
+					return Uni.createFrom().voidItem();
 				} else {
-					return Mono.error(new RuntimeException("Failed to enqueue message"));
+					return Uni.createFrom().failure(new RuntimeException("Failed to enqueue message"));
 				}
-			}));
+			});
 		}
 
 		@Override
@@ -183,11 +189,12 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 		}
 
 		@Override
-		public Mono<Void> closeGracefully() {
-			return Mono.fromRunnable(() -> {
+		public Uni<Void> closeGracefully() {
+			return Uni.createFrom().item(() -> {
 				isClosing.set(true);
 				logger.debug("Session transport closing gracefully");
 				inboundSink.tryEmitComplete();
+				return null;
 			});
 		}
 
@@ -208,17 +215,17 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 		}
 
 		private void initProcessing() {
-			this.inboundSink.asFlux().flatMap(message1 -> serverSession.handle(message1)).doOnTerminate(() -> {
+			this.inboundSink.asMulti().onItem().transformToUniAndMerge(message1 -> serverSession.handle(message1)).onTermination().invoke(() -> {
 				this.outboundSink.tryEmitComplete();
-			}).subscribe();
+			}).subscribe().with(unused -> {});
 
 			if (isStarted.compareAndSet(false, true)) {
-				inboundReady.tryEmitValue(null);
+				inboundReady.tryEmitNext(null);
 			}
 
 			try {
 				this.serverSocketChannel = new UDSServerStringChannel(selector == null ? Selector.open() : selector,
-						incomingBufferSize, Executors.newCachedThreadPool()) {
+						incomingBufferSize, executorService) {
 					public void start(UnixDomainSocketAddress address, IOConsumer<SocketChannel> acceptHandler,
 							IOConsumer<String> readHandler) throws IOException {
 						super.start(StandardProtocolFamily.UNIX, address, acceptHandler, readHandler);
@@ -227,6 +234,7 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 					public boolean isClientConnected() {
 						return this.acceptedClient != null;
 					}
+
 					@Override
 					protected void handleException(SelectionKey key, Throwable e) {
 						// Do this with existing executor
@@ -284,43 +292,41 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 		}
 
 		private void startOutboundProcessing() {
-			Function<Flux<JSONRPCMessage>, Flux<JSONRPCMessage>> outboundConsumer = messages -> messages // @formatter:off
-				 .doOnSubscribe(subscription -> outboundReady.tryEmitValue(null))
-				 .publishOn(outboundScheduler)
-				 .handle((message, sink) -> {
+			outboundSink.asMulti()
+				 .onSubscription().invoke(() -> outboundReady.tryEmitNext(null))
+				 .emitOn(executorService)
+				 .onItem().transformToUniAndConcatenate(message -> {
 					 if (message != null && !isClosing.get()) {
 						 try {
 							 serverSocketChannel.writeMessage(objectMapper.writeValueAsString(message));
-							 sink.next(message);
+							 return Uni.createFrom().item(message);
 						 }
 						 catch (IOException e) {
 							 if (!isClosing.get()) {
 								 logger.error("Error writing message", e);
-								 sink.error(new RuntimeException(e));
+								 return Uni.createFrom().failure(new RuntimeException(e));
 							 }
 							 else {
 								 logger.debug("Stream closed during shutdown", e);
+								 return Uni.createFrom().nothing();
 							 }
 						 }
 					 }
 					 else if (isClosing.get()) {
-						 sink.complete();
+						 return Uni.createFrom().nothing();
 					 }
+					 return Uni.createFrom().nothing();
 				 })
-				 .doOnComplete(() -> {
+				 .onCompletion().invoke(() -> {
 					 isClosing.set(true);
-					 outboundScheduler.dispose();
 				 })
-				 .doOnError(e -> {
+				 .onFailure().invoke(e -> {
 					 if (!isClosing.get()) {
 						 logger.error("Error in outbound processing", e);
 						 isClosing.set(true);
-						 outboundScheduler.dispose();
 					 }
 				 })
-				 .map(msg -> (JSONRPCMessage) msg);
-			
-				 outboundConsumer.apply(outboundSink.asFlux()).subscribe();
+				 .subscribe().with(msg -> {}, err -> {});
 		 } 
 
 		private void logIfNotClosing(String message, Exception e) {
@@ -329,58 +335,6 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 			}
 		}
 
-	}
-
-	class McpServerTransportImpl implements McpServerTransport, MCPServerTransport<Mono<Void>, JSONRPCMessage> {
-		
-		@Override
-		public Mono<Void> closeGracefully() {
-			return sessionTransport.closeGracefully();
-		}
-
-		@Override
-		public Mono<Void> sendMessage(JSONRPCMessage message) {
-			return sessionTransport.sendMessage(message);
-		}
-
-		@Override
-		public <T> T unmarshalFrom(Object data, TypeRef<T> typeRef) {
-			return sessionTransport.unmarshalFrom(data, typeRef);
-		}
-
-		@Override
-		public List<String> protocolVersions() {
-			return sessionTransport.protocolVersions();
-		}
-
-		@Override
-		public <T> T unmarshalFrom(Object data, GenericTypeRef<T> type) {
-			return sessionTransport.unmarshalFrom(data, new TypeRef<T>() {
-				@Override
-				public Type getType() {
-					return type.getType();
-				}
-			});
-		}
-
-		@Override
-		public void close() {
-			sessionTransport.close();
-		}
-
-	}
-	public void initServerSessionFactory(MCPServerSessionFactory<Mono<Void>, Mono<?>, JSONRPCMessage> factory) {
-		this.sessionTransport = new UDSMcpSessionTransport();
-		org.openmcptools.transport.server.MCPServerSession<Mono<Void>, Mono<?>> serverSession = factory.create(new McpServerTransportImpl());
-		if (serverSession instanceof McpServerSession) {
-			this.serverSession = (McpServerSession) serverSession;
-		}
-		this.sessionTransport.initProcessing();
-	}
-
-	@Override
-	public void close() {
-		this.closeGracefully().block();
 	}
 
 }

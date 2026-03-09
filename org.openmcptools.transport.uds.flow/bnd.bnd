@@ -3,10 +3,9 @@
 	org.eclipse.ecf.ai.mcp.transports,\
 	org.osgi.service.component.annotations,\
 	slf4j.api,\
-	io.modelcontextprotocol.sdk.mcp-core
+	io.modelcontextprotocol.sdk.mcp-core,\
+	io.smallrye.reactive.mutiny,\
+	org.openmcptools.transport.uds,\
+	io.projectreactor.reactor-core,\
+	reactive-streams
 
--includeresource: mutiny-3.1.1.jar
-
--classpath=mutiny-3.1.1.jar
-
-Bundle-ClassPath: ., mutiny-3.1.1.jar
