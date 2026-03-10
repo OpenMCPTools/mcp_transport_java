@@ -1,7 +1,6 @@
 package org.openmcptools.transport.uds.spring;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.Selector;
 import java.nio.file.Path;
@@ -15,6 +14,8 @@ import java.util.function.Function;
 
 import org.eclipse.ecf.ai.mcp.transports.UDSClientStringChannel;
 import org.openmcptools.transport.client.MCPClientTransport;
+import org.openmcptools.transport.spring.JsonObjectMapper;
+import org.openmcptools.transport.spring.TypeRefAdapter;
 import org.openmcptools.transport.util.GenericTypeRef;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -33,10 +34,10 @@ import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
-@Component(factory = UDSMcpClientTransportConfig.CLIENT_TRANSPORT_FACTORY_NAME, service = { McpClientTransport.class, MCPClientTransport.class })
-public class UDSMcpClientTransportFactory implements McpClientTransport, MCPClientTransport<Mono<Void>, Mono<McpSchema.JSONRPCMessage>, Mono<McpSchema.JSONRPCMessage>,McpSchema.JSONRPCMessage> {
+@Component(factory = UDSClientTransportConfig.CLIENT_TRANSPORT_FACTORY_NAME, service = { McpClientTransport.class, MCPClientTransport.class })
+public class UDSClientTransportFactory implements McpClientTransport, MCPClientTransport<Mono<Void>, Mono<McpSchema.JSONRPCMessage>, Mono<McpSchema.JSONRPCMessage>,McpSchema.JSONRPCMessage> {
 
-	private static final Logger logger = LoggerFactory.getLogger(UDSMcpClientTransportFactory.class);
+	private static final Logger logger = LoggerFactory.getLogger(UDSClientTransportFactory.class);
 
 	private final Sinks.Many<JSONRPCMessage> inboundSink;
 
@@ -59,7 +60,7 @@ public class UDSMcpClientTransportFactory implements McpClientTransport, MCPClie
 
 	private volatile boolean isClosing = false;
 
-	public UDSMcpClientTransportFactory() {
+	public UDSClientTransportFactory() {
 		this.inboundSink = Sinks.many().unicast().onBackpressureBuffer();
 		this.outboundSink = Sinks.many().unicast().onBackpressureBuffer();
 	}
@@ -71,7 +72,7 @@ public class UDSMcpClientTransportFactory implements McpClientTransport, MCPClie
 	
 	@Activate
 	void activate(Map<String, Object> properties) throws Exception {
-		UDSMcpClientTransportConfig clientConfig = new UDSMcpClientTransportConfig(properties);
+		UDSClientTransportConfig clientConfig = new UDSClientTransportConfig(properties);
 		this.targetAddress = clientConfig.getTargetSocketPath();
 		this.selector = clientConfig.getSelector();
 		this.executorService = clientConfig.getExecutorService();
@@ -194,12 +195,7 @@ public class UDSMcpClientTransportFactory implements McpClientTransport, MCPClie
 
 	@Override
 	public <T> T unmarshalFrom(Object data, GenericTypeRef<T> unmarshalledTypeRef) {
-		return this.objectMapper.unmarshalFrom(data, new TypeRef<T>() {
-			@Override
-			public Type getType() {
-				return unmarshalledTypeRef.getType();
-			}
-		});
+		return this.objectMapper.unmarshalFrom(data, new TypeRefAdapter<T>(unmarshalledTypeRef));
 	}
 
 	@Override

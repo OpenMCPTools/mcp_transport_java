@@ -8,7 +8,8 @@
 	io.modelcontextprotocol.sdk.mcp-core,\
 	org.openmcptools.transport,\
 	org.eclipse.ecf.ai.mcp.transports,\
-	org.openmcptools.transport.uds
+	org.openmcptools.transport.uds,\
+	org.openmcptools.transport.spring
 	
-Bundle-Version:             2.0.0.${tstamp}
+Bundle-Version: 3.0.0.${tstamp}
 	

@@ -1,4 +1,4 @@
-package org.openmcptools.transport.uds.spring;
+package org.openmcptools.transport.spring;
 
 import java.io.IOException;
 
@@ -23,6 +23,9 @@ public class JsonObjectMapper {
 		this.mcpJsonMapper = supplier.get();
 	}
 	
+	public McpJsonMapper getMcpJsonMapper() {
+		return this.mcpJsonMapper;
+	}
 	public <T> T readValue(String content, Class<T> type) throws IOException {
 		return mcpJsonMapper.readValue(content, type);
 	}

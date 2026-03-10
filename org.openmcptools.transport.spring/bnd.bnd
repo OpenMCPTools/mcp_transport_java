@@ -1,0 +1,10 @@
+-buildpath: \
+	io.modelcontextprotocol.sdk.mcp-core,\
+	org.osgi.service.component.annotations,\
+	org.openmcptools.transport,\
+	io.projectreactor.reactor-core,\
+	org.osgi.annotation.versioning,\
+	org.osgi.annotation.bundle
+	
+Bundle-Version: 3.0.0.${tstamp}
+	

@@ -1,7 +1,6 @@
 package org.openmcptools.transport.uds.spring;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.SelectionKey;
@@ -16,10 +15,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import org.openmcptools.transport.server.MCPServerSessionFactory;
-import org.openmcptools.transport.server.MCPServerTransport;
 import org.openmcptools.transport.server.MCPServerTransportProvider;
+import org.openmcptools.transport.spring.JsonObjectMapper;
+import org.openmcptools.transport.spring.MCPServerTransportImpl;
 import org.openmcptools.transport.uds.server.UDSServerStringChannel;
-import org.openmcptools.transport.util.GenericTypeRef;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -41,10 +40,10 @@ import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
-@Component(factory = UDSMcpServerTransportConfig.SERVER_TRANSPORT_FACTORY_NAME, service = {McpServerTransportProvider.class, MCPServerTransportProvider.class})
-public class UDSMcpServerTransportProviderFactory implements McpServerTransportProvider, MCPServerTransportProvider<Mono<Void>, Mono<?>, JSONRPCMessage> {
+@Component(factory = UDSServerTransportConfig.SERVER_TRANSPORT_FACTORY_NAME, service = {McpServerTransportProvider.class, MCPServerTransportProvider.class})
+public class UDSServerTransportProviderFactory implements McpServerTransportProvider, MCPServerTransportProvider<Mono<Void>, Mono<?>, JSONRPCMessage> {
 
-	private static final Logger logger = LoggerFactory.getLogger(UDSMcpServerTransportProviderFactory.class);
+	private static final Logger logger = LoggerFactory.getLogger(UDSServerTransportProviderFactory.class);
 
 	private JsonObjectMapper objectMapper;
 	// Required Path for UnixDomainSocket creation
@@ -69,7 +68,7 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 	
 	@Activate
 	protected void activate(Map<String, Object> properties) {
-		UDSMcpServerTransportConfig serverConfig = new UDSMcpServerTransportConfig(properties);
+		UDSServerTransportConfig serverConfig = new UDSServerTransportConfig(properties);
 		this.targetAddress = serverConfig.getTargetSocketPath();
 		this.incomingBufferSize = serverConfig.getIncomingBufferSize();
 		this.restartSession = serverConfig.autoRestartSession();
@@ -328,53 +327,11 @@ public class UDSMcpServerTransportProviderFactory implements McpServerTransportP
 				logger.error(message, e);
 			}
 		}
-
 	}
 
-	class McpServerTransportImpl implements McpServerTransport, MCPServerTransport<Mono<Void>, JSONRPCMessage> {
-		
-		@Override
-		public Mono<Void> closeGracefully() {
-			return sessionTransport.closeGracefully();
-		}
-
-		@Override
-		public Mono<Void> sendMessage(JSONRPCMessage message) {
-			return sessionTransport.sendMessage(message);
-		}
-
-		@Override
-		public <T> T unmarshalFrom(Object data, TypeRef<T> typeRef) {
-			return sessionTransport.unmarshalFrom(data, typeRef);
-		}
-
-		@Override
-		public List<String> protocolVersions() {
-			return sessionTransport.protocolVersions();
-		}
-
-		@Override
-		public <T> T unmarshalFrom(Object data, GenericTypeRef<T> type) {
-			return sessionTransport.unmarshalFrom(data, new TypeRef<T>() {
-				@Override
-				public Type getType() {
-					return type.getType();
-				}
-			});
-		}
-
-		@Override
-		public void close() {
-			sessionTransport.close();
-		}
-
-	}
 	public void initServerSessionFactory(MCPServerSessionFactory<Mono<Void>, Mono<?>, JSONRPCMessage> factory) {
 		this.sessionTransport = new UDSMcpSessionTransport();
-		org.openmcptools.transport.server.MCPServerSession<Mono<Void>, Mono<?>> serverSession = factory.create(new McpServerTransportImpl());
-		if (serverSession instanceof McpServerSession) {
-			this.serverSession = (McpServerSession) serverSession;
-		}
+		this.serverSession = (McpServerSession) factory.create(new MCPServerTransportImpl(this.sessionTransport));
 		this.sessionTransport.initProcessing();
 	}
 

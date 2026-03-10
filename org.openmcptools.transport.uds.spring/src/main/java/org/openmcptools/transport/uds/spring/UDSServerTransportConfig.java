@@ -9,22 +9,22 @@ import java.util.concurrent.ExecutorService;
 
 import org.openmcptools.transport.uds.UDSTransportConfig;
 
-public class UDSMcpServerTransportConfig extends UDSTransportConfig {
+public class UDSServerTransportConfig extends UDSTransportConfig {
 
 	public static final String AUTO_RESTART_SESSION_PROP = "udsAutoRestartSession";
 
-	public static final String SERVER_TRANSPORT_FACTORY_NAME = "UDSMcpServerTransportProviderFactory";
+	public static final String SERVER_TRANSPORT_FACTORY_NAME = "UDSServerTransportProviderFactory";
 	public static final String SERVER_CF_TARGET = "(component.factory=" + SERVER_TRANSPORT_FACTORY_NAME + ")";
 
 	protected boolean autoRestartSession = true;
 
-	public UDSMcpServerTransportConfig(Path targetSocketPath, int incomingBufferSize, Selector selector,
+	public UDSServerTransportConfig(Path targetSocketPath, int incomingBufferSize, Selector selector,
 			ExecutorService executorService, boolean autoRestartSession) {
 		super(targetSocketPath, incomingBufferSize, selector, executorService);
 		this.autoRestartSession = autoRestartSession;
 	}
 
-	public UDSMcpServerTransportConfig(Path targetSocketPath, boolean autoRestartSession) {
+	public UDSServerTransportConfig(Path targetSocketPath, boolean autoRestartSession) {
 		super(targetSocketPath);
 		File f = targetSocketPath.toFile();
 		f.delete();
@@ -32,11 +32,11 @@ public class UDSMcpServerTransportConfig extends UDSTransportConfig {
 		this.autoRestartSession = autoRestartSession;
 	}
 
-	public UDSMcpServerTransportConfig(Path targetSocketPath) {
+	public UDSServerTransportConfig(Path targetSocketPath) {
 		this(targetSocketPath, true);
 	}
 
-	public UDSMcpServerTransportConfig(Map<String, Object> properties) {
+	public UDSServerTransportConfig(Map<String, Object> properties) {
 		super(properties);
 		Boolean b = (Boolean) properties.get(AUTO_RESTART_SESSION_PROP);
 		if (b != null) {
