@@ -4,7 +4,7 @@ A lightweight, transport-agnostic Java abstraction for the **Model Context Proto
 
 ## Overview
 
-Model Context Protocol (MCP) is an open standard for connecting AI models to external tools and data. This project provides the core Java interfaces and utilities required to implement MCP Clients and Servers. It is designed to be highly flexible, supporting various asynchronous frameworks (Project Reactor, CompletableFuture, Mutiny) and transport mechanisms (Stdio, SSE, WebSockets).
+Model Context Protocol (MCP) is an open standard for connecting AI models to external tools and data. This project provides the core Java interfaces and utilities required to implement MCP Clients and Servers. It is designed to be highly flexible, supporting various asynchronous frameworks (Project Reactor, CompletableFuture, Project Mutiny) and transport mechanisms (Stdio, SSE, WebSockets).
 
 ## Package Structure
 
@@ -16,8 +16,12 @@ Model Context Protocol (MCP) is an open standard for connecting AI models to ext
 ## Key Features
 
 - **Protocol Agnostic**: Build tools that work over Standard I/O, HTTP/SSE, or any custom stream.
-- **Async & Reactive Framework Agnostic**: Fully generic design compatible with `java.util.concurrent`, `io.projectreactor`, 'io.smallrye.mutiny' or other reactive framework.
+- **Async & Reactive Framework Agnostic**: Fully generic design compatible with `java.util.concurrent`, `io.projectreactor`, `io.smallrye.mutiny` or other reactive frameworks.
 - **OSGi Ready**: Includes metadata for OSGi container environments.
+
+## Implementations
+
+MCP Java SDK (Spring) - In org.openmcptools.transport.spring and (UDS) org.openmcptools.transport.spring.uds
 
 ## License
 
