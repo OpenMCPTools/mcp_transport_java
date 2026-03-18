@@ -13,7 +13,7 @@ This repo also has an implementation based upon Unix Domain Sockets (UDS).  This
 
 ### API
 
-[org.openmcptools.transport](https://github.com/OpenMCPTools/mcp_transport_java/tree/main/org.openmcptools.transport.uds) - The OpenMCPTools transport API
+[org.openmcptools.transport](https://github.com/OpenMCPTools/mcp_transport_java/tree/main/org.openmcptools.transport) - The OpenMCPTools transport API
 
 ### Unix Domain Sockets
 
