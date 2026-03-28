@@ -1,5 +1,6 @@
 package org.openmcptools.transport.spring;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -10,59 +11,61 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
+import io.modelcontextprotocol.server.McpTransportContextExtractor;
+import io.modelcontextprotocol.server.transport.HttpServletSseServerTransportProvider;
+import io.modelcontextprotocol.server.transport.ServerTransportSecurityValidator;
 import io.modelcontextprotocol.spec.McpSchema.JSONRPCMessage;
 import io.modelcontextprotocol.spec.McpServerSession;
 import io.modelcontextprotocol.spec.McpServerSession.Factory;
 import io.modelcontextprotocol.spec.McpServerTransportProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import reactor.core.publisher.Mono;
 
-@Component(factory = StdioServerTransportProviderConfig.SERVER_TRANSPORT_FACTORY_NAME, service = {
+@Component(factory = HttpServletSseServerTransportProviderConfig.SERVER_TRANSPORT_FACTORY_NAME, service = {
 		MCPServerTransportProvider.class, McpServerTransportProvider.class })
-public class StdioServerTransportProviderFactory
+public class HttpServletSseServerTransportProviderFactory
 		implements MCPServerTransportProvider<Mono<Void>, Mono<?>, JSONRPCMessage>, McpServerTransportProvider {
 
 	private JsonObjectMapper jsonMapper;
-	private MCPStdioServerTransportProvider impl;
+	private MCPHttpServletSseServerTransportProvider impl;
 
 	@Reference
 	void setJsonObjectMapper(JsonObjectMapper jsonMapper) {
 		this.jsonMapper = jsonMapper;
 	}
 
-	class MCPStdioServerTransportProvider extends StdioServerTransportProvider implements
+	class MCPHttpServletSseServerTransportProvider extends HttpServletSseServerTransportProvider implements
 			org.openmcptools.transport.server.MCPServerTransportProvider<Mono<Void>, Mono<?>, JSONRPCMessage> {
 
-		public MCPStdioServerTransportProvider(StdioServerTransportProviderConfig config) {
-			super(jsonMapper.getMcpJsonMapper(), config.getInputStream(), config.getOutputStream());
+		private static final long serialVersionUID = 7695330167683607291L;
+
+		MCPHttpServletSseServerTransportProvider(String baseUrl, String messageEndpoint, String sseEndpoint,
+				Duration keepAliveInterval, McpTransportContextExtractor<HttpServletRequest> contextExtractor,
+				ServerTransportSecurityValidator securityValidator) {
+			super(jsonMapper.getMcpJsonMapper(), baseUrl, messageEndpoint, sseEndpoint, keepAliveInterval,
+					contextExtractor, securityValidator);
+		}
+
+		@Override
+		public void initServerSessionFactory(MCPServerSessionFactory<Mono<Void>, Mono<?>, JSONRPCMessage> factory) {
+			impl.setSessionFactory(transport -> ((McpServerSession) factory
+					.create(new MCPServerTransportImpl(transport))));
 		}
 
 		@Override
 		public void close() {
 			super.close();
 		}
-
-		class MCPStdioTransport extends StdioMcpSessionTransport {
-			@Override
-			protected void initProcessing() {
-				super.initProcessing();
-			}
-		}
-
-		@Override
-		public void initServerSessionFactory(MCPServerSessionFactory<Mono<Void>, Mono<?>, JSONRPCMessage> factory) {
-			MCPStdioTransport t = new MCPStdioTransport();
-			this.session = (McpServerSession) factory.create(new MCPServerTransportImpl(t));
-			t.initProcessing();
-		}
 	}
 
 	@Activate
 	void activate(Map<String, Object> properties) {
-		StdioServerTransportProviderConfig config = (StdioServerTransportProviderConfig) properties
-				.get(StdioServerTransportProviderConfig.SERVER_TRANSPORT_FACTORY_CONFIG);
+		HttpServletSseServerTransportProviderConfig config = HttpServletSseServerTransportProviderConfig
+				.fromProperties(properties);
 		Objects.requireNonNull(config, "StdioServerTransportProviderConfig must not be null");
-		this.impl = new MCPStdioServerTransportProvider(config);
+		this.impl = new MCPHttpServletSseServerTransportProvider(config.getBaseUrl(), config.getMessageEndpoint(),
+				config.getSseEndpoint(), config.getKeepAliveInterval(), config.getContextExtractor(),
+				config.getSecurityValidator());
 	}
 
 	@Override

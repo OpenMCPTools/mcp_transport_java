@@ -17,7 +17,7 @@ public class MCPServerTransportImpl implements MCPServerTransport<Mono<Void>, JS
 	public MCPServerTransportImpl(McpServerTransport delegate) {
 		this.delegate = delegate;
 	}
-	
+
 	@Override
 	public List<String> protocolVersions() {
 		return delegate.protocolVersions();

@@ -12,20 +12,20 @@ import io.modelcontextprotocol.json.TypeRef;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.JSONRPCMessage;
 
-@Component(immediate=true, service=JsonObjectMapper.class)
+@Component(immediate = true, service = JsonObjectMapper.class)
 public class JsonObjectMapper {
 
 	private final McpJsonMapper mcpJsonMapper;
-	
+
 	@Activate
-	public JsonObjectMapper(
-			@Reference McpJsonMapperSupplier supplier) {
+	public JsonObjectMapper(@Reference McpJsonMapperSupplier supplier) {
 		this.mcpJsonMapper = supplier.get();
 	}
-	
+
 	public McpJsonMapper getMcpJsonMapper() {
 		return this.mcpJsonMapper;
 	}
+
 	public <T> T readValue(String content, Class<T> type) throws IOException {
 		return mcpJsonMapper.readValue(content, type);
 	}

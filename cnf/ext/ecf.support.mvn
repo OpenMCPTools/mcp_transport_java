@@ -2,3 +2,4 @@ io.projectreactor:reactor-core:3.7.0
 org.slf4j:slf4j-api:2.0.16
 org.reactivestreams:reactive-streams:1.0.4
 
+jakarta.servlet:jakarta.servlet-api:6.1.0
