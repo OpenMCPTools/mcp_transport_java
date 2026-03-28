@@ -21,4 +21,6 @@ This UDS implementation supports long-running servers, allowing clients to disco
 
 [org.openmcptools.transport.uds.spring](https://github.com/OpenMCPTools/mcp_transport_java/tree/main/org.openmcptools.transport.uds.spring) - Unix Domain Socket Implementation for [Java SDK](https://github.com/modelcontextprotocol/java-sdk)
 
+### Example Application ###
 
+[MCPToolGroups](https://github.com/ECF/MCPToolGroups) - A dynamic MCP server and client that use the UDS implementation and API described above.
