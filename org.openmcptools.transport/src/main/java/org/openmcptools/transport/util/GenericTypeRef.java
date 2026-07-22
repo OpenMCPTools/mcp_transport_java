@@ -8,7 +8,7 @@ import java.lang.reflect.Type;
  *
  * @param <T> the type to be referenced
  */
-public abstract class GenericTypeRef<T> {
+public class GenericTypeRef<T> {
 
 	private final Type type;
 
@@ -17,7 +17,7 @@ public abstract class GenericTypeRef<T> {
 	 *
 	 * @param type the type to reference
 	 */
-	protected GenericTypeRef(Type type) {
+	public GenericTypeRef(Type type) {
 		this.type = type;
 	}
 	

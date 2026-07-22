@@ -3,5 +3,5 @@
 	org.osgi.annotation.versioning,\
 	org.eclipse.ecf.ai.mcp.transports
 	
-Bundle-Version: 3.0.0.${tstamp}
+Bundle-Version: 4.0.0.${tstamp}
 	

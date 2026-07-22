@@ -45,42 +45,49 @@ public class StdioClientTransportFactory implements
 	}
 
 	@Override
-	public <T> T unmarshalFrom(Object data, GenericTypeRef<T> unmarshalledTypeRef) {
-		return impl.unmarshalFrom(data, new TypeRefAdapter<T>(unmarshalledTypeRef));
-	}
-
-	@Override
 	public Mono<Void> closeGracefully() {
-		return impl.closeGracefully();
-	}
-
-	@Override
-	public void close() {
-		impl.close();
-	}
-
-	@Override
-	public Mono<Void> sendMessage(JSONRPCMessage message) {
-		return impl.sendMessage(message);
-	}
-
-	@Override
-	public <T> T unmarshalFrom(Object data, TypeRef<T> typeRef) {
-		return unmarshalFrom(data, typeRef);
+		return closeAsync();
 	}
 
 	@Override
 	public Mono<Void> connect(Function<Mono<JSONRPCMessage>, Mono<JSONRPCMessage>> handler) {
-		return impl.connect(handler);
+		return connectAsync(handler, null);
 	}
 
 	@Override
-	public Mono<Void> connect(Function<Mono<JSONRPCMessage>, Mono<JSONRPCMessage>> requestResponseHandler,
+	public Mono<Void> sendMessage(JSONRPCMessage message) {
+		return sendMessageAsync(message);
+	}
+
+	@Override
+	public <T> T unmarshalFrom(Object data, TypeRef<T> typeRef) {
+		return unmarshall(data, new GenericTypeRef<T>(typeRef.getType()));
+	}
+
+	// impl of MCPClientTransport
+	public <T> T unmarshall(Object data, GenericTypeRef<T> unmarshalledTypeRef) {
+		return impl.unmarshalFrom(data, new TypeRefAdapter<T>(unmarshalledTypeRef));
+	}
+
+	public Mono<Void> closeAsync() {
+		return impl.closeGracefully();
+	}
+
+	public void closeSync() {
+		impl.close();
+	}
+
+	public Mono<Void> connectAsync(Function<Mono<JSONRPCMessage>, Mono<JSONRPCMessage>> requestResponseHandler,
 			Consumer<Throwable> exceptionHandler) {
 		if (exceptionHandler != null) {
 			this.impl.setExceptionHandler(exceptionHandler);
 		}
-		return connect(requestResponseHandler);
+		return this.impl.connect(requestResponseHandler);
+	}
+
+	@Override
+	public Mono<Void> sendMessageAsync(JSONRPCMessage message) {
+		return impl.sendMessage(message);
 	}
 
 }

@@ -1,6 +1,5 @@
 package org.openmcptools.transport;
 
-import java.util.List;
 import org.openmcptools.transport.util.GenericTypeRef;
 
 /**
@@ -12,19 +11,12 @@ import org.openmcptools.transport.util.GenericTypeRef;
 public interface MCPTransport<AV, M> {
 
 	/**
-	 * Returns the list of supported protocol versions.
-	 *
-	 * @return a list of protocol version strings
-	 */
-	List<String> protocolVersions();
-	
-	/**
 	 * Sends a message through the transport.
 	 *
 	 * @param message the message to send
 	 * @return an asynchronous void result
 	 */
-	AV sendMessage(M message);
+	AV sendMessageAsync(M message);
 
 	/**
 	 * Unmarshals data from a transport-specific format to a typed object.
@@ -34,18 +26,18 @@ public interface MCPTransport<AV, M> {
 	 * @param unmarshalledTypeRef the type reference for unmarshalling
 	 * @return the unmarshalled object
 	 */
-	<T> T unmarshalFrom(Object data, GenericTypeRef<T> unmarshalledTypeRef);
+	<T> T unmarshall(Object data, GenericTypeRef<T> unmarshalledTypeRef);
 
 	/**
 	 * Initiates a graceful shutdown of the transport.
 	 *
 	 * @return an asynchronous void result
 	 */
-	AV closeGracefully();
+	AV closeAsync();
 
 	/**
 	 * Closes the transport immediately.
 	 */
-	void close();
+	void closeSync();
 }
 

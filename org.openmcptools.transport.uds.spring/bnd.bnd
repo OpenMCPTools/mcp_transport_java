@@ -11,5 +11,5 @@
 	org.openmcptools.transport.uds,\
 	org.openmcptools.transport.spring
 	
-Bundle-Version: 3.0.0.${tstamp}
+Bundle-Version: 4.0.0.${tstamp}
 	

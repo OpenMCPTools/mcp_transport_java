@@ -100,7 +100,7 @@ public class UDSServerTransportProviderFactory implements McpServerTransportProv
 	}
 
 	@Override
-	public Mono<Void> notifyClients(String method, Object params) {
+	public Mono<Void> notifyClientsAsync(String method, Object params) {
 		if (this.serverSession == null) {
 			return Mono.error(McpError.builder(-1).message("No uds acceptedClient to use for notifyClients").build());
 		}
@@ -109,7 +109,7 @@ public class UDSServerTransportProviderFactory implements McpServerTransportProv
 	}
 
 	@Override
-	public Mono<Void> closeGracefully() {
+	public Mono<Void> closeAsync() {
 		if (this.serverSession == null) {
 			return Mono.empty();
 		}
@@ -336,8 +336,18 @@ public class UDSServerTransportProviderFactory implements McpServerTransportProv
 	}
 
 	@Override
-	public void close() {
-		this.closeGracefully().block();
+	public void closeSync() {
+		closeGracefully().block();
+	}
+
+	@Override
+	public Mono<Void> notifyClients(String method, Object params) {
+		return notifyClientsAsync(method, params);
+	}
+
+	@Override
+	public Mono<Void> closeGracefully() {
+		return closeAsync();
 	}
 
 }

@@ -19,7 +19,7 @@ public interface MCPSession<AV, AR> {
 	 * @param responseTypeRef the type reference for the response
 	 * @return an asynchronous result containing the response
 	 */
-	<T> AR sendRequest(String method, Object requestParams, GenericTypeRef<T> responseTypeRef);
+	<T> AR sendRequestAsync(String method, Object requestParams, GenericTypeRef<T> responseTypeRef);
 
 	/**
 	 * Sends an asynchronous notification.
@@ -28,17 +28,17 @@ public interface MCPSession<AV, AR> {
 	 * @param params the parameters for the notification
 	 * @return an asynchronous void result
 	 */
-	AV sendNotification(String method, Object params);
+	AV sendNotificationAsync(String method, Object params);
 
 	/**
 	 * Initiates a graceful shutdown of the session.
 	 *
 	 * @return an asynchronous void result
 	 */
-	AV closeGracefully();
+	AV closeAsync();
 
 	/**
 	 * Closes the session immediately.
 	 */
-	void close();
+	void closeSync();
 }

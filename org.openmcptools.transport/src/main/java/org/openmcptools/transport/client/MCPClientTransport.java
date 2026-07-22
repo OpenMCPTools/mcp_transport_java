@@ -21,15 +21,6 @@ public interface MCPClientTransport<AV, ARQ, ARS, M> extends MCPTransport<AV, M>
 	 * @param exceptionHandler the handler for processing errors
 	 * @return an asynchronous void result indicating connection status
 	 */
-	AV connect(Function<ARQ, ARS> requestResponseHandler, Consumer<Throwable> exceptionHandler);
+	AV connectAsync(Function<ARQ, ARS> requestResponseHandler, Consumer<Throwable> exceptionHandler);
 
-	/**
-	 * Connects the transport with a request handler.
-	 *
-	 * @param requestResponseHandler the handler for processing requests and producing results
-	 * @return an asynchronous void result indicating connection status
-	 */
-	default AV connect(Function<ARQ, ARS> requestResponseHandler) {
-		return connect(requestResponseHandler, null);
-	}
 }

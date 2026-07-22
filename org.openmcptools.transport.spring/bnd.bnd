@@ -5,7 +5,8 @@
 	io.projectreactor.reactor-core,\
 	org.osgi.annotation.versioning,\
 	org.osgi.annotation.bundle,\
-	jakarta.servlet-api
+	jakarta.servlet-api,\
+	io.smallrye.mutiny
 	
-Bundle-Version: 3.1.0.${tstamp}
+Bundle-Version: 4.0.0.${tstamp}
 	

@@ -24,17 +24,17 @@ public class MCPServerTransportImpl implements MCPServerTransport<Mono<Void>, JS
 	}
 
 	@Override
-	public <T> T unmarshalFrom(Object data, GenericTypeRef<T> unmarshalledTypeRef) {
+	public <T> T unmarshall(Object data, GenericTypeRef<T> unmarshalledTypeRef) {
 		return delegate.unmarshalFrom(data, new TypeRefAdapter<>(unmarshalledTypeRef));
 	}
 
 	@Override
-	public Mono<Void> closeGracefully() {
+	public Mono<Void> closeAsync() {
 		return delegate.closeGracefully();
 	}
 
 	@Override
-	public void close() {
+	public void closeSync() {
 		delegate.close();
 	}
 
@@ -46,5 +46,15 @@ public class MCPServerTransportImpl implements MCPServerTransport<Mono<Void>, JS
 	@Override
 	public <T> T unmarshalFrom(Object data, TypeRef<T> typeRef) {
 		return delegate.unmarshalFrom(data, typeRef);
+	}
+
+	@Override
+	public Mono<Void> sendMessageAsync(JSONRPCMessage message) {
+		return sendMessage(message);
+	}
+
+	@Override
+	public Mono<Void> closeGracefully() {
+		return closeGracefully();
 	}
 }

@@ -25,11 +25,26 @@ public class MCPServerSessionImpl extends McpServerSession implements MCPServerS
 	}
 
 	@Override
-	public <T> Mono<T> sendRequest(String method, Object requestParams, GenericTypeRef<T> responseTypeRef) {
+	public <T> Mono<T> sendRequestAsync(String method, Object requestParams, GenericTypeRef<T> responseTypeRef) {
 		return super.sendRequest(method, requestParams, new TypeRefAdapter<T>(responseTypeRef));
 	}
 
 	public String getSessionId() {
 		return getId();
+	}
+
+	@Override
+	public Mono<Void> sendNotificationAsync(String method, Object params) {
+		return super.sendNotification(method, params);
+	}
+
+	@Override
+	public Mono<Void> closeAsync() {
+		return super.closeGracefully();
+	}
+
+	@Override
+	public void closeSync() {
+		super.close();
 	}
 }

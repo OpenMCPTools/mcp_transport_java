@@ -29,19 +29,19 @@ public interface MCPServerTransportProvider<AV, AR, M> {
 	 * @param params the parameters for the notification
 	 * @return an asynchronous void result
 	 */
-	AV notifyClients(String method, Object params);
+	AV notifyClientsAsync(String method, Object params);
 
 	/**
 	 * Closes the transport provider immediately.
 	 */
-	void close();
+	void closeSync();
 
 	/**
 	 * Initiates a graceful shutdown of the transport provider.
 	 *
 	 * @return an asynchronous void result
 	 */
-	AV closeGracefully();
+	AV closeAsync();
 
 	/**
 	 * Returns the supported protocol versions.

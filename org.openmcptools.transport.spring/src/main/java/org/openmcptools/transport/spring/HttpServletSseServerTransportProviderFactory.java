@@ -48,13 +48,23 @@ public class HttpServletSseServerTransportProviderFactory
 
 		@Override
 		public void initServerSessionFactory(MCPServerSessionFactory<Mono<Void>, Mono<?>, JSONRPCMessage> factory) {
-			impl.setSessionFactory(transport -> ((McpServerSession) factory
-					.create(new MCPServerTransportImpl(transport))));
+			impl.setSessionFactory(
+					transport -> ((McpServerSession) factory.create(new MCPServerTransportImpl(transport))));
 		}
 
 		@Override
-		public void close() {
+		public void closeSync() {
 			super.close();
+		}
+
+		@Override
+		public Mono<Void> notifyClientsAsync(String method, Object params) {
+			return notifyClients(method, params);
+		}
+
+		@Override
+		public Mono<Void> closeAsync() {
+			return closeGracefully();
 		}
 	}
 
@@ -74,13 +84,13 @@ public class HttpServletSseServerTransportProviderFactory
 	}
 
 	@Override
-	public Mono<Void> notifyClients(String method, Object params) {
-		return this.impl.notifyClients(method, params);
+	public Mono<Void> notifyClientsAsync(String method, Object params) {
+		return this.impl.notifyClientsAsync(method, params);
 	}
 
 	@Override
-	public Mono<Void> closeGracefully() {
-		return this.impl.closeGracefully();
+	public Mono<Void> closeAsync() {
+		return this.impl.closeAsync();
 	}
 
 	@Override
@@ -94,8 +104,18 @@ public class HttpServletSseServerTransportProviderFactory
 	}
 
 	@Override
-	public void close() {
-		this.impl.close();
+	public void closeSync() {
+		this.impl.closeSync();
+	}
+
+	@Override
+	public Mono<Void> notifyClients(String method, Object params) {
+		return impl.notifyClients(method, params);
+	}
+
+	@Override
+	public Mono<Void> closeGracefully() {
+		return impl.closeGracefully();
 	}
 
 }

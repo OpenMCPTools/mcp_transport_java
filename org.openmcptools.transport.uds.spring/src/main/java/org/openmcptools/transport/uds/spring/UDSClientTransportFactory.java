@@ -34,8 +34,10 @@ import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
-@Component(factory = UDSClientTransportConfig.CLIENT_TRANSPORT_FACTORY_NAME, service = { McpClientTransport.class, MCPClientTransport.class })
-public class UDSClientTransportFactory implements McpClientTransport, MCPClientTransport<Mono<Void>, Mono<McpSchema.JSONRPCMessage>, Mono<McpSchema.JSONRPCMessage>,McpSchema.JSONRPCMessage> {
+@Component(factory = UDSClientTransportConfig.CLIENT_TRANSPORT_FACTORY_NAME, service = { McpClientTransport.class,
+		MCPClientTransport.class })
+public class UDSClientTransportFactory implements McpClientTransport,
+		MCPClientTransport<Mono<Void>, Mono<McpSchema.JSONRPCMessage>, Mono<McpSchema.JSONRPCMessage>, McpSchema.JSONRPCMessage> {
 
 	private static final Logger logger = LoggerFactory.getLogger(UDSClientTransportFactory.class);
 
@@ -69,7 +71,7 @@ public class UDSClientTransportFactory implements McpClientTransport, MCPClientT
 	void setMcpJsonMapper(JsonObjectMapper jsonMapper) {
 		this.objectMapper = jsonMapper;
 	}
-	
+
 	@Activate
 	void activate(Map<String, Object> properties) throws Exception {
 		UDSClientTransportConfig clientConfig = new UDSClientTransportConfig(properties);
@@ -81,47 +83,13 @@ public class UDSClientTransportFactory implements McpClientTransport, MCPClientT
 		this.clientChannel = new UDSClientStringChannel(this.selector, this.incomingBufferSize);
 	}
 
-	@Override
-	public Mono<Void> connect(Function<Mono<JSONRPCMessage>, Mono<JSONRPCMessage>> handler) {
-		return Mono.<Void>fromRunnable(() -> {
-			handleIncomingMessages(handler);
-			try {
-				this.clientChannel.connect(UnixDomainSocketAddress.of(targetAddress), (client) -> {
-					logger.info("CONNECTED to targetAddress=" + targetAddress);
-				}, (data) -> {
-					JSONRPCMessage json = deserializeJsonRpcMessage(this.objectMapper, data);
-					if (!this.inboundSink.tryEmitNext(json).isSuccess()) {
-						if (!isClosing) {
-							logger.error("Failed to enqueue inbound message: {}", json);
-						}
-					}
-				});
-			} catch (IOException e) {
-				this.clientChannel.close();
-				throw new RuntimeException(
-						"Connect to address=" + targetAddress + " failed message: " + e.getMessage());
-			}
-			startOutboundProcessing();
-		}).subscribeOn(Schedulers.boundedElastic());
-	}
-
-	private JSONRPCMessage deserializeJsonRpcMessage(JsonObjectMapper objectMapper, String data)
-			throws IOException {
+	private JSONRPCMessage deserializeJsonRpcMessage(JsonObjectMapper objectMapper, String data) throws IOException {
 		return objectMapper.deserializeJsonRpcMessage(data);
 	}
 
 	private void handleIncomingMessages(Function<Mono<JSONRPCMessage>, Mono<JSONRPCMessage>> inboundMessageHandler) {
 		this.inboundSink.asFlux().flatMap(message -> Mono.just(message).transform(inboundMessageHandler)
 				.contextWrite(ctx -> ctx.put("observation", "myObservation"))).subscribe();
-	}
-
-	@Override
-	public Mono<Void> sendMessage(JSONRPCMessage message) {
-		if (this.outboundSink.tryEmitNext(message).isSuccess()) {
-			return Mono.empty();
-		} else {
-			return Mono.error(new RuntimeException("Failed to enqueue message"));
-		}
 	}
 
 	private void startOutboundProcessing() {
@@ -151,7 +119,80 @@ public class UDSClientTransportFactory implements McpClientTransport, MCPClientT
 	}
 
 	@Override
+	public Mono<Void> sendMessage(JSONRPCMessage message) {
+		return sendMessageAsync(message);
+	}
+
+	@Override
+	public Mono<Void> connect(Function<Mono<JSONRPCMessage>, Mono<JSONRPCMessage>> handler) {
+		return connectAsync(handler, e -> {
+			this.clientChannel.close();
+			throw new RuntimeException(
+					"Connect to address=" + targetAddress + " failed message: " + e.getMessage());
+		});
+	}
+	
+	@Override
 	public Mono<Void> closeGracefully() {
+		return closeAsync();
+	}
+
+	@Override
+	public <T> T unmarshalFrom(Object data, TypeRef<T> typeRef) {
+		return unmarshall(data, new GenericTypeRef<T>(typeRef.getType()));
+	}
+
+	@Override
+	public List<String> protocolVersions() {
+		return List.of(ProtocolVersions.MCP_2024_11_05);
+	}
+
+	// Impl of org.openmcptools.transport.client.MCPClientTransport<Mono<Void>, Mono<JSONRPCMessage>, Mono<JSONRPCMessage>, JSONRPCMessage>
+	public <T> T unmarshall(Object data, GenericTypeRef<T> unmarshalledTypeRef) {
+		return this.objectMapper.unmarshalFrom(data, new TypeRefAdapter<T>(unmarshalledTypeRef));
+	}
+	
+	public Mono<Void> sendMessageAsync(JSONRPCMessage message) {
+		if (this.outboundSink.tryEmitNext(message).isSuccess()) {
+			return Mono.empty();
+		} else {
+			return Mono.error(new RuntimeException("Failed to enqueue message"));
+		}
+	}
+
+	public Mono<Void> connectAsync(Function<Mono<JSONRPCMessage>, Mono<JSONRPCMessage>> requestResponseHandler,
+			Consumer<Throwable> exceptionHandler) {
+		return Mono.<Void>fromRunnable(() -> {
+			handleIncomingMessages(requestResponseHandler);
+			try {
+				this.clientChannel.connect(UnixDomainSocketAddress.of(targetAddress), (client) -> {
+					logger.info("CONNECTED to targetAddress=" + targetAddress);
+				}, (data) -> {
+					JSONRPCMessage json = deserializeJsonRpcMessage(this.objectMapper, data);
+					if (!this.inboundSink.tryEmitNext(json).isSuccess()) {
+						if (!isClosing) {
+							logger.error("Failed to enqueue inbound message: {}", json);
+						}
+					}
+				});
+			} catch (IOException e) {
+				if (exceptionHandler != null) {
+					exceptionHandler.accept(e);
+				} else {
+					this.clientChannel.close();
+					throw new RuntimeException(
+							"Connect to address=" + targetAddress + " failed message: " + e.getMessage());
+				}
+			}
+			startOutboundProcessing();
+		}).subscribeOn(Schedulers.boundedElastic());
+	}
+
+	public void closeSync() {
+		closeAsync().block();
+	}
+
+	public Mono<Void> closeAsync() {
 		return Mono.fromRunnable(() -> {
 			isClosing = true;
 			logger.debug("Initiating graceful shutdown");
@@ -176,35 +217,6 @@ public class UDSClientTransportFactory implements McpClientTransport, MCPClientT
 				logger.error("Error during graceful shutdown", e);
 			}
 		})).then().subscribeOn(Schedulers.boundedElastic());
-	}
-
-	@Override
-	public <T> T unmarshalFrom(Object data, TypeRef<T> typeRef) {
-		return this.objectMapper.unmarshalFrom(data, typeRef);
-	}
-
-	@Override
-	public void close() {
-		closeGracefully().block();
-	}
-
-	@Override
-	public List<String> protocolVersions() {
-		return List.of(ProtocolVersions.MCP_2024_11_05);
-	}
-
-	@Override
-	public <T> T unmarshalFrom(Object data, GenericTypeRef<T> unmarshalledTypeRef) {
-		return this.objectMapper.unmarshalFrom(data, new TypeRefAdapter<T>(unmarshalledTypeRef));
-	}
-
-	@Override
-	public Mono<Void> connect(Function<Mono<JSONRPCMessage>, Mono<JSONRPCMessage>> requestResponseHandler,
-			Consumer<Throwable> exceptionHandler) {
-		if (exceptionHandler != null) {
-			setExceptionHandler(exceptionHandler);
-		}
-		return connect(requestResponseHandler, null);
 	}
 
 }
